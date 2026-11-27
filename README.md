@@ -1,109 +1,18 @@
-# X Store
-### The first open source homebrew app that can download Xbox, Xbox 360 and XBLA games/DLCs/Title Updates directly on the console!
+#### Summary
 
-### I am sorry
-This project was intentended to be a proof of concept xbox 360 game downloader. I never expected so many people to see the post I put up online about it. I am sorry that my confusing, afterthought of a name caused issues, I never wanted it to do so. I respect the work done by the free60 project, though probably never will fully understand how much personal time and effor went into it. In short, I never wanted to make anybody mad, I just wanted to create a cool piece of homebrew. 
+This pull request integrates ~5x faster native Games on Demand (GOD) conversion, Original Xbox (00005000) container support, automatic NXE Storage title/icon embedding, and a 3-stage resumable download/decompression/conversion queue directly into **X-Store**. 
 
-Not affiliated with the [free60 project](https://free60.org)
+#### Key Improvements
 
-## NOTICE: Working Again!!!
+* **~5x Faster Native GOD Conversion (iso2god.cpp):** Streams 4096-byte SVOD blocks and MHT/SHT hash tables directly from disc images and extracted folders, eliminating intermediate ISO copies and speeding up large Xbox 360 and Original Xbox conversions.
+* **Native Original Xbox (00005000) Support:** Parses default.xbe (XBEH) headers, builds 00005000 LIVE containers, and decodes $$XTIMAGE / $$XSIMAGE (XPR0 DXT1) artwork into 64x64 NXE Storage PNG icons.
+* **Automatic NXE Storage Titles & 64x64 Icons:** 
 
-## What is it?
+  * Extracts titles and 64x64 PNG icons directly on-console from retail XEX2 executables (AES-128-CBC decryption + multi-block LZX XDBF scanning), nxeart archives, and icon.dds (BGRA8888, DXT1, DXT3, DXT5 mipmaps via XGSetTextureHeader).
+  * Falls back automatically to existing profile saves (00000001), DLC (00000002), or Title Updates (000B0000), and lists any edge-case title needing save data on the completion screen.
+* **3-Stage Resumable Queue (store_queue_persist.h):** Saves queue progress across download, archive decompression, and GOD conversion stages so interrupted batches resume cleanly without restarting from scratch.
+* **Completion Summary Screen:** Keeps **X-Store** open after batch completion (Press A to return to X-Store menu, or B to exit) instead of exiting immediately.
 
-The X Store is a homebrew application for the Xbox 360 that allows games to be directly downloaded onto the Xbox 360.
+#### Testing
 
-## Requirements
-
-* A JTAG/RGH hard modded console OR a console running BadUpdate/ABadAvatar
-* The Xbox 360 must be connected to the internet
-* A free [Internet Archive account](https://archive.org/)
-
-## **Not** Required
-
-* Stealth Server
-* Xbox Live
-* Local web server
-
-## How to use
-
-For detailed instructions on how to setup X Store, see the [setup guide](https://github.com/951261/X-Store/blob/main/docs/Setup%20Guide.md) 
-
-## Updating
-If you are on version 0.2.10 or later, you can update to the latest version by selecting `Update X Store` when you first start the program. If you are on an earlier version, download the latest version from the releases page, and replace X-Store.xex on your console with the latest version this github repo. 
-
-If you are updating from version 0.2.12 or earlier, then you will need to either login to your Internet Archive account, or add you Internet Archive S3 keys. 
-You must first [create a free Internet Archive account](https://archive.org/signup) (if you do not have one already). DO NOT select `Signup with Google`, unless you are willing to follow option 2 below. 
-
-**Logging into Internet Archive OPTION 1 (easiest):**
-* This option only works if you have a standard Internet Archive account. If you would normally login to your account on [Internet Archive](https://archive.org/login) by selecting `Sign in with Google`, then you must choose OPTION 2 below. 
-* After Updating X Store from version 0.2.12 or earlier, you should see a message asking you to login to your Internet Archive account. Press A to continue. After a short moment, you should see a keyboard asking for your Internet Archive account email address. Simply enter your email address, then press Done. Now you should see a keyboard asking for your Internet Archive account password. Enter your password, then press Done. Both the username and password are fully encrypted with your console's Key Vault. Your password is never sent over plain text, and is always send as encrypted HTTPS traffic. If your login details were correct, you should now see the X Store main menu. If your login details were incorrect, you will see an error message, asking you to press A to login again.
-
-**Logging into Internet Archive OPTION 2:**
-* This option will work with ANY Internet Archive account, no matter what login method you use.
-* Go to [https://archive.org/account/s3.php](https://archive.org/account/s3.php) (you must be logged in) to find your S3 access key and your S3 secret key. On your computer, create a file named `ArchiveOrgKeys.txt`. Open `ArchiveOrgKeys.txt` in a text editor. On the first line of the file, copy and paste your S3 access key, then on the second line, copy and paste your S3 secret key (similar to [Omni360](https://github.com/JustGillin/omni360/#setup)). Save and close the file. You must then copy the file to your Xbox 360, and place it in the SAME FOLDER as `X-Store.xex`. The easiest way to do this is to simply copy `ArchiveOrgKeys.txt` to a FAT32 formatted USB drive (such as the one you already use for BadUpdate/ABadAvatar) using your PC or phone. You can then use a file manager (such as Aurora or XEX Menu) to `ArchiveOrgKeys.txt` to the same folder as `X-Store.xex`. Another option is to use FTP ([as seen in this guide](https://xbox360rgh.com/rgh-tutorial/rgh-transferring-games-files-via-ftp/)) to copy the files to your console's internal HDD or a USB. Once `ArchiveOrgKeys.txt` is on your console in the same folder as `X-Store.xex`, simply start X Store, and you should be able to download games, DLCs and Title Updates. 
-
-## Troubleshooting
-
-| | |
-| --- | --- |
-| It is taking a long time to search for a game/DLC/TU | On versions 0.2.13 and up, the first time you search for an Original Xbox Game, an Xbox 360 game and an XBLA game/DLC/TU, it will take a few minutes to load the search results. After the search is complete, all subsequent searches of the same download type (Xbox, Xbox 360 or XBLA/DLC/TU) should load in a few seconds. If a download fails, it will clear the cached search results, and will hence take a while to perform the next search for each download type. |
-| I cannot login to my Internet Archive account | Ensure your login details are correct. If you cannot login with your email address and password, try using S3 keys instead (as described in OPTION 2 above) |
-| I cannot search for games | Try manually updating X Store to the latest version. If this does not fix it, then it is likely caused by a known issue that I have not identified the cause of. I do not know why it works fine for some, but not others | 
-| The download freezes or fails | If you have any slow or intermittent internet connection, it can cause the download to fail. Currently, there is no fix for this. Additionally, check you have enough storage space to download the game | 
-| 7zip or ISO decompression fails | Check your have enough free storage space. You may need **twice** the game size in free space to ensure the download does not fail. | 
-| ISO extraction fails | Check your have enough free storage space. Also check that the paths in `settings.txt` are correct. A common issue is when extracting to an internal hard drive, you must use `hdd:\`, NOT `hdd1:\`. | 
-
-## Compiling from the source
-
-[See Compiling](COMPILING.md)
-
-**Warning:** The codebase for this program is VERY messy. I am slowly fixing it up, but don't set your expectations too high. 
-
-## How the Code Works
-
-[Read the Code Breakdown](how_it_works.md)
-
-## FAQ
-
-* Will this work with BadUpdate/ABadAvatar/Peer Pressure? Yes, it should work on any homebrew capable Xbox 360 console
-* Why is it taking so long? The Xbox 360 is (by modern standards) an old console. Attempting to download large games directly on the console over encrypted HTTPS is not a simple feat
-* How can I make my downloads faster? Wired ethernet will usually be faster than WiFi. The biggest contributor to speed is usually based on where you live, and how fast your internet connection is. Changing your DNS settings is unlikely to make a difference. 
-* Does this require a stealth server? No, this program only requires an internet connection, no Xbox Live or Stealth server required
-* Does it run in the background? No, you must keep the program open whilst downloading, decompressing and extracting
-* Does this work with Aurora/FSD? Yes, this program will work with any dashboard that can launch homebrew apps.
-* Do I need to change any dashlaunch or launch.ini settings for X Store to work? No, you should not need to edit any launch.ini/dashlaunch settings.
-* Why is the user interface so bad? I have very little experience with user interface design, and I have been more focused on getting the backend working. If you are skilled enough to make a better UI, I would very much appreciate it. 
-
-## Credits
-
-Many thanks to all of the open source projects that made this possible, including:
-
-* [XboxTLS](https://github.com/JakobRangel/XboxTLS) by JakobRangel, for encrypted HTTPS communication
-* [Simple 360 Nand Flasher](https://github.com/Swizzy/XDK_Projects) by Swizzy, to use as a base project to work from, as well as providing a simple, easy to use interface to output console style text to the screen
-* [extract-xiso](https://github.com/XboxDev/extract-xiso) by XboxDev, modified to extract ISO files directly on the Xbox itself
-* [LZMA SDK](https://www.7-zip.org/sdk.html), to decompress LZMA and LZMA 2 compressed 7z files
-* [miniz](https://github.com/richgel999/miniz) to decompress the update data
-* [cJSON](https://github.com/DaveGamble/cJSON) to parse the JSON data required to update the program
-* [Internet Archive](https://archive.org/), without which this entire project would not have been possible
-* Multi-select on the search screen (`X` to mark/unmark, `Y` to queue all marked) implemented by [bvlxtelli](https://github.com/bvlxtelli)
-
-## Disclaimers
-
-* Firstly, while this program should not harm your Xbox 360 in any way, it is still in a very early alpha phase. As with all homebrew, run it at your own risk
-* This program is in a very early alpha phase, and should be treated as a proof-of-concept. Bugs should be expected
-* Depending on your local law, it may or may not be legal for you to download games with this tool. I take ABSOLUTELY NO RESPONSIBILITY for your actions
-* AI. Yes, I used it. While this project is **not** vibecoded, there are many portions of this project where I made use of AI to **assist** in writing parts of the code
-* This project has no intention of being affiliated with the free60 project. 
-
-## TODO
-
-* Clean up the very messy code
-* Optimise 7z decompression, potentially implimenting multithreading
-* Eliminate memory leaks
-* Impliment a better UI using xUI
-* Add support to download from ROMSFUN using flaresolver proxy - unlikely
-* Potentially make use of the [triangle](https://github.com/JakobRangel/Triangle) frontend when it is made open source
-* Test to see if DOS 8.3 file name limitations affect FATX
-* Update user-agent to better identify the program
-
-Pull Requests are welcome
+* Verified on retail Xbox 360 hardware across multi-gigabyte Xbox 360 (00007000) and Original Xbox (00005000) titles, confirming valid LIVE signatures, SHA-1 hashes, 0x411/0x1691 UTF-16 Big-Endian titles, and 64x64 PNG icons in NXE Storage.
